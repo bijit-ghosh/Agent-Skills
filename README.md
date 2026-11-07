@@ -19,6 +19,7 @@ The collection is based on Bijit Ghosh's article, **“Formally Verified, Still 
 - [Evidence and decision standards](#evidence-and-decision-standards)
 - [Using the skills in a delivery pipeline](#using-the-skills-in-a-delivery-pipeline)
 - [Bounded recursive improvement with context and evaluations](#bounded-recursive-improvement-with-context-and-evaluations)
+- [Benchmark execution and results](#benchmark-execution-and-results)
 - [Limitations and validation status](#limitations-and-validation-status)
 - [Contributing](#contributing)
 - [Background and attribution](#background-and-attribution)
@@ -29,7 +30,7 @@ The repository contains three instruction-based skills. Each includes a `SKILL.m
 
 They guide an agent through assurance tasks using the requirements, code, tools, and evidence available in the target project. They can be used independently or together.
 
-**The repository does not currently include an executable model checker, evaluation harness, CI workflow, production policy engine, or sample application.** When a skill calls for a check, the agent must use the project's available tooling, create appropriate project-specific artifacts within the task scope, or clearly report that the check was not run.
+**The repository includes a small [decision-quality benchmark harness](benchmark/README.md), but no executable model checker, CI workflow, production policy engine, or sample application.** The benchmark tests decisions on synthetic case descriptions; it does not execute the application workflows described in the skills. When a skill calls for a check, the agent must use the project's available tooling, create appropriate project-specific artifacts within the task scope, or clearly report that the check was not run.
 
 Intended users include platform engineers, engineering leads, architects, agent developers, reliability teams, and reviewers responsible for consequential software changes.
 
@@ -60,6 +61,7 @@ Routine low-risk edits do not require the complete three-skill workflow.
 ```text
 Agent-Skills/
 ├── README.md
+├── benchmark/                  # Runner, public cases, unit tests and run evidence
 ├── software-factory-verification/
 │   ├── SKILL.md
 │   ├── agents/
@@ -780,10 +782,25 @@ candidate, remaining uncertainty, and a promotion recommendation. Do not
 deploy or change active skills unless separately authorized.
 ```
 
+## Benchmark execution and results
+
+An executable Python harness now compares **baseline**, **all-skill context**, and **selective skill context** on 10 public synthetic assurance cases. It supports the documented model IDs `gpt-6-astra` and `claude-opus-5-5`, records provenance and provider usage, and applies deterministic grading.
+
+| Item | Actual result |
+|---|---|
+| Local harness validation | 9 tests executed; all 9 passed |
+| GPT-6 Astra model benchmark | 0 inference calls; blocked by missing API credentials |
+| Claude Opus 5.5 model benchmark | 0 inference calls; blocked by missing API credentials |
+| Token, latency, and cost improvement claims | Not established |
+
+These are harness execution results, not model performance scores. The signed-in Codex CLI access probe also failed before inference due to local filesystem permissions.
+
+See the [benchmark protocol, commands, limitations, and recorded results](benchmark/README.md). The public case set is a smoke benchmark, not a protected holdout or a demonstration of recursive self-improvement.
+
 ## Limitations and validation status
 
 - The three skills passed the bundled skill-creator structural validator during initial creation. The original run logs and validator version are not published here, so this is a reported creation-time check rather than independently reproducible evidence of that historical run. Structural validation checks packaging and instruction-file conventions; it does not demonstrate effectiveness on production systems.
-- The repository does not currently publish a behavioral benchmark, production certification, or measured defect-reduction claim.
+- A public synthetic decision-quality benchmark and local harness test evidence are published under `benchmark/`. Model inference was blocked by missing credentials; no model performance, production certification, or measured defect-reduction claim is published.
 - Formal results cover the stated properties and assumptions. Bounded exploration remains bounded.
 - Evaluation results depend on case selection, grader quality, environment fidelity, and sample size.
 - A correct model can diverge from implementation. Evidence must be revisited when relevant code, dependencies, policies, prompts, tools, or configuration change.
