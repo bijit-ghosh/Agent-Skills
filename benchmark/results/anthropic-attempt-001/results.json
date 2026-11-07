@@ -1,0 +1,63 @@
+{
+  "started_at": "2026-11-07T17:49:35.386887+00:00",
+  "provider": "anthropic",
+  "requested_model": "claude-opus-5-5",
+  "dataset_sha256": "2a6eae7d9517ad745d770839c2952242856c65cfc359fdd3b654e7541b8d841c",
+  "runner_sha256": "7ffccf5fdfc324136e96b17f69a4698f86017d771cd67b4b107e1ca2e97c3364",
+  "settings": {
+    "provider": "anthropic",
+    "model": null,
+    "skills_root": "C:\\Users\\bijit\\Documents\\Codex\\2026-11-07\\cre\\outputs",
+    "out": "outputs\\benchmark\\results\\anthropic-attempt-001",
+    "repeats": 1,
+    "max_calls": 30,
+    "max_output_tokens": 4096,
+    "max_seconds": 900,
+    "seed": 731
+  },
+  "method": "public synthetic decision cases; single-turn; no tools; provider default effort",
+  "model_run_status": "blocked_missing_credentials",
+  "rows": [],
+  "cost_status": "not measured; provider usage is not an invoice",
+  "summary": {
+    "baseline": {
+      "attempts": 0,
+      "graded": 0,
+      "passed": 0,
+      "errors_or_incomplete": 0,
+      "schema_failures": 0,
+      "unsafe_decisions": 0,
+      "observed_pass_fraction": null,
+      "total_reported_tokens": null,
+      "tokens_per_pass": null,
+      "median_latency_seconds": null,
+      "cost_usd": null
+    },
+    "full": {
+      "attempts": 0,
+      "graded": 0,
+      "passed": 0,
+      "errors_or_incomplete": 0,
+      "schema_failures": 0,
+      "unsafe_decisions": 0,
+      "observed_pass_fraction": null,
+      "total_reported_tokens": null,
+      "tokens_per_pass": null,
+      "median_latency_seconds": null,
+      "cost_usd": null
+    },
+    "selective": {
+      "attempts": 0,
+      "graded": 0,
+      "passed": 0,
+      "errors_or_incomplete": 0,
+      "schema_failures": 0,
+      "unsafe_decisions": 0,
+      "observed_pass_fraction": null,
+      "total_reported_tokens": null,
+      "tokens_per_pass": null,
+      "median_latency_seconds": null,
+      "cost_usd": null
+    }
+  }
+}
