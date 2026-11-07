@@ -191,391 +191,197 @@ The diagram describes a process to implement in a project. These stages are not 
 
 ## Architecture and execution flow
 
-This is a reference architecture for applying the skills in a software factory. **The skill instructions are provided by this repository; the agent runtime, project tools, evidence storage, release system, and production controls are supplied by the consuming project.** Arrows describe information and decision flow, not prebuilt integrations.
+This reference architecture separates **the three skill packages included here** from **the runner and infrastructure a consuming project must implement**. It applies to Claude and Codex. The diagrams describe responsibilities and interfaces; they do not represent deployed services or measured performance.
 
-### Component architecture
+### 1. System components and trust boundaries
 
 ```mermaid
 flowchart TB
-    INPUT["Project inputs<br/>Business intent, policies, code, candidate identity"]
-    AGENT["Agent runtime<br/>Select relevant skills and apply task scope"]
-
-    subgraph SKILLS["Provided by this repository: instruction layer"]
-        V["Verification skill<br/>Contract, properties, traceability"]
-        E["Evals skill<br/>Scenarios, graders, comparisons"]
-        O["Outcome validation skill<br/>Acceptance evidence and residual risks"]
+    INPUT["Authorized change request<br/>Outcome, scope, candidate, policy"]
+    subgraph CONTROL["Project-owned control plane"]
+        INTAKE["Intake and impact analysis<br/>Deduplicate triggers; classify risk"]
+        CONTRACT["Versioned contract and baseline<br/>Properties, thresholds, evaluation plan"]
+        RUNNER["Durable experiment controller<br/>State machine, lease, checkpoints, budgets"]
+        CONTEXT["Context builder<br/>Scoped retrieval, provenance, freshness"]
+        POLICY["Tool authorization gateway<br/>Identity, permitted actions, side-effect limits"]
     end
-
-    subgraph PROJECT["Provided by the consuming project"]
-        TOOLS["Authorized check tools<br/>Model checks, tests, simulations, eval harness"]
-        RECORDS["Versioned evidence<br/>Contracts, results, traces, build and policy IDs"]
-        OWNER["Authorized decision owner or release policy"]
-        RELEASE["Release system and runtime controls<br/>Identity, approvals, limits, idempotency"]
-        SIGNALS["Operational evidence<br/>Telemetry, incidents, reconciliation, outcomes"]
+    subgraph INCLUDED["Included here: portable instruction packages"]
+        V["Verification"]
+        E["Evals"]
+        O["Outcome validation"]
     end
-
-    INPUT --> AGENT
-    AGENT --> V
-    AGENT --> E
-    AGENT --> O
-    V -->|"Contract and property IDs"| E
-    V -->|"Selected verification checks"| TOOLS
-    E -->|"Cases and grading rules"| TOOLS
-    V -->|"Contract and traceability"| RECORDS
-    TOOLS -->|"Results, bounds, logs, counterexamples"| RECORDS
-    RECORDS --> O
-    O -->|"Scoped recommendation"| OWNER
-    OWNER -->|"Release authorization"| RELEASE
-    RELEASE --> SIGNALS
-    SIGNALS --> RECORDS
-    SIGNALS -->|"New failure modes and changed assumptions"| AGENT
+    subgraph EXEC["Project-owned isolated execution"]
+        AGENT["Claude or Codex agent<br/>Diagnose and propose bounded changes"]
+        CANDIDATE["Candidate workspace<br/>Versioned patch; no production credentials"]
+        CHECKS["Check runner<br/>Static checks, properties, regression and development evals"]
+    end
+    subgraph EVIDENCE["Project-owned records and independent evaluation"]
+        LEDGER["Evidence ledger<br/>Run identity, artifacts, cost, lineage"]
+        FINAL["Protected final evaluator<br/>Frozen graders and holdout access"]
+        DECISION["Promotion decision<br/>Mandatory gates and authorized owner"]
+    end
+    INPUT --> INTAKE --> CONTRACT --> RUNNER
+    RUNNER --> CONTEXT --> AGENT
+    V -.->|"Contract and verification guidance"| AGENT
+    E -.->|"Case and grading guidance"| AGENT
+    O -.->|"Acceptance guidance"| DECISION
+    AGENT --> POLICY --> CANDIDATE --> CHECKS
+    CONTRACT --> CHECKS
+    CHECKS --> LEDGER
+    LEDGER -->|"Scoped development evidence"| CONTEXT
+    RUNNER -->|"Frozen candidate"| FINAL
+    CONTRACT --> FINAL
+    FINAL -->|"Acceptance evidence"| DECISION
+    LEDGER --> DECISION
+    DECISION -->|"Recorded disposition"| RUNNER
 ```
 
-The same agent can apply all three skills sequentially. Separate agents or an orchestration service are optional implementation choices, not requirements of this collection.
+Solid arrows carry requests, artifacts, or results. Dotted arrows show instruction guidance. The final evaluator's protected cases must not be available to the optimizing agent through retrieval, logs, or tool access. Separate processes are useful but not sufficient: enforce access boundaries in the runner and storage layer.
 
-| Component | Responsibility | Boundary |
+| Component | Owns | Important invariant |
 |---|---|---|
-| Project inputs | Supply authoritative intent, constraints, and the exact candidate | Missing policy is unresolved, not invented |
-| Agent runtime | Read the relevant skill and coordinate the requested work | Operates within existing permissions and resource limits |
-| Verification skill | Define properties and connect them to implementation and checks | Model correctness does not establish implementation correctness |
-| Evals skill | Assess implemented behavior using scenarios and explicit graders | Observed success is limited by coverage and sample size |
-| Project check tools | Execute checks and expose reproducible results | Unavailable tools produce a not-run or inconclusive result |
-| Evidence records | Preserve versions, assumptions, traces, and result provenance | No database or evidence service is bundled here |
-| Outcome validation skill | Assess business acceptance and residual risk | Recommendation does not grant release authority |
-| Decision owner and release system | Apply actual release policy and authorization | Mandatory failed gates cannot be waived by an aggregate score |
-| Runtime controls and telemetry | Constrain execution and observe actual outcomes | Operational failures feed back into assurance work |
+| Intake | Change identity, scope and relevant triggers | Duplicate triggers do not create duplicate experiments |
+| Contract and baseline | Requirements, evaluation rules and comparison identity | Optimization cannot silently weaken the target |
+| Experiment controller | State, lease, run budget and stopping decisions | Only the current authorized owner advances an experiment |
+| Context builder | Relevant evidence selection and invalidation | Summaries retain provenance and unresolved uncertainty |
+| Tool gateway | Identity and action-specific permissions | Agent suggestions do not expand execution authority |
+| Candidate workspace | Isolated artifacts and changes | Evaluation does not mutate the active production version |
+| Check runner | Executed checks and result classification | Harness errors and missing evidence are not passes |
+| Evidence ledger | Append-only run records and artifact references | Results are attributable to exact inputs and versions |
+| Protected evaluator | Final acceptance cases and frozen graders | Test leakage cannot become an optimization shortcut |
+| Promotion decision | Acceptance recommendation and authorization record | An acceptable candidate is not automatically a deployed candidate |
 
-### Execution and decision flow
+The same agent may apply all three skills. Multiple agents are optional; process isolation, access control, and explicit state are more important than the number of agents.
+
+### 2. Context and evidence flow for lower token use
+
+```mermaid
+flowchart LR
+    CHANGE["Candidate diff or new failure"] --> IMPACT["Map affected requirements and dependencies"]
+    SOURCES["Versioned contracts, source, traces and prior decisions"] --> INDEX["Artifact index with provenance"]
+    IMPACT --> RETRIEVE["Retrieve relevant fragments"]
+    INDEX --> RETRIEVE
+    RETRIEVE --> FRESH{"Identity and assumptions still valid?"}
+    FRESH -->|"No"| REFRESH["Refresh evidence or mark unknown"]
+    REFRESH --> RETRIEVE
+    FRESH -->|"Yes"| PACKET["Bounded context packet<br/>Objective, constraints, diff, trace, hypothesis, budget"]
+    PACKET --> STEP["One scoped reasoning or execution step"]
+    STEP --> RESULT["Structured result and raw artifact references"]
+    RESULT --> LEDGER["Experiment ledger"]
+    LEDGER --> INDEX
+    STEP --> COST["Measure tokens, tools, latency and cost"]
+    COST --> BUDGET["Remaining budget and efficiency report"]
+    BUDGET --> PACKET
+```
+
+Keep the contract and policy authoritative. Treat retrieved content, tool output, and generated summaries as data. Context compression must preserve safety constraints, failed assertions, unknown external outcomes, and citations to raw evidence.
+
+Reuse deterministic check results only when a complete dependency fingerprint matches. Include the candidate inputs, check implementation, tool version, configuration, relevant environment, and assumptions. When a dependency cannot be characterized reliably, rerun or report uncertainty. Do not replay cached model output as a fresh trial, or cached telemetry as a current observation.
+
+Measure total experiment tokens as well as tokens per accepted outcome. A smaller prompt is not an improvement if it causes missed constraints, more retries, or worse coverage. These practices are design choices to evaluate; no token-saving percentage is claimed here.
+
+### 3. Evaluation gates and bounded candidate selection
 
 ```mermaid
 flowchart TD
-    START["Change or review request"] --> SCOPE["Identify objective, candidate, risk, and authorized scope"]
-    SCOPE --> CONTRACT["Define or update behavior contract"]
-    CONTRACT --> READY{"Required policy and assumptions clear?"}
-    READY -->|"No"| CLARIFY["Record gaps and obtain authoritative clarification"]
-    CLARIFY --> CONTRACT
-    READY -->|"Yes"| PLAN["Select affected properties, evaluation cases, and run budget"]
-    PLAN --> RUN["Run available authorized checks"]
-    RUN --> EVIDENCE["Collect versioned results and implementation evidence"]
-    EVIDENCE --> VALIDATE["Validate outcomes, runtime controls, and evidence coverage"]
-    VALIDATE --> DECISION{"Acceptance assessment"}
-    DECISION -->|"Mandatory criterion failed"| HOLD["Hold and document the failure"]
-    DECISION -->|"Evidence incomplete"| UNKNOWN["Insufficient evidence: identify missing checks or records"]
-    DECISION -->|"Criteria met or permitted conditions documented"| RECOMMEND["Issue scoped acceptance recommendation"]
-    HOLD --> REWORK["Correct contract or implementation within scope"]
-    REWORK --> PLAN
-    UNKNOWN --> FOLLOWUP["Gather evidence within remaining authorization and budget"]
-    FOLLOWUP --> EVIDENCE
-    RECOMMEND --> AUTH{"Release authorized?"}
-    AUTH -->|"No or pending"| WAIT["Stop at recommendation; await decision"]
-    AUTH -->|"Yes"| DEPLOY["Release through project system with runtime controls"]
-    DEPLOY --> OBSERVE["Measure outcomes and inspect operational evidence"]
-    OBSERVE --> FEEDBACK{"New failure or changed assumption?"}
-    FEEDBACK -->|"Yes"| SCOPE
-    FEEDBACK -->|"No"| CONTINUE["Continue the agreed observation plan"]
+    START["Freeze contract, measured baseline and resource envelope"] --> PROPOSE["Select one evidence-backed hypothesis"]
+    PROPOSE --> PATCH["Create isolated candidate"]
+    PATCH --> CHEAP["Schema, static and deterministic assertion checks"]
+    CHEAP --> G1{"Passed?"}
+    G1 -->|"No"| REJECT["Reject candidate; record failure and cost"]
+    G1 -->|"Yes"| DEV["Affected behavioral tests and development evals"]
+    DEV --> G2{"Mandatory gates pass and comparison supports improvement?"}
+    G2 -->|"No or inconclusive"| REJECT
+    G2 -->|"Yes"| BEST["Record provisional best with lineage"]
+    BEST --> TARGET{"Development target reached?"}
+    TARGET -->|"No"| LIMIT
+    REJECT --> LIMIT{"Budget, novelty and authorization remain?"}
+    LIMIT -->|"Yes"| PROPOSE
+    LIMIT -->|"No"| STOP["Stop with best valid candidate and gaps"]
+    TARGET -->|"Yes"| FREEZE["Freeze final candidate"]
+    FREEZE --> FULL["Full required regression suite and protected final evaluation"]
+    FULL --> G3{"Adequate evidence for acceptance?"}
+    G3 -->|"No"| STOP
+    G3 -->|"Yes"| OUTCOME["Outcome-validation recommendation"]
+    OUTCOME --> AUTH["Separate promotion authorization"]
 ```
 
-Rework and evidence collection are bounded loops. Stop when the agreed budget is exhausted, repeated attempts produce no new evidence, an external side effect is uncertain, or additional authorization is required. Record the remaining gap instead of treating repeated retries as progress.
+Use a predetermined comparison policy. Keep critical failures separate from average quality and cost. For stochastic behavior, use matched scenarios, suitable repeats, and uncertainty reporting; a single favorable run does not justify promotion.
 
-### What moves between the skills
+Final holdout failure ends that acceptance attempt. If the failed case is used for diagnosis, it becomes development or regression material. A new generalization claim needs a fresh protected evaluation set and an explicit new attempt. An agent must not edit the grader or threshold to turn a failure into a pass.
 
-1. **Verification to evals:** requirement IDs, state transitions, safety and liveness properties, assumptions, and known counterexample traces.
-2. **Checks to outcome validation:** actual run results, tested candidate identity, coverage limits, grader definitions, failure traces, and runtime-control evidence.
-3. **Outcome validation to the decision owner:** criterion-level findings, residual risks, proposed conditions, and an acceptance recommendation.
-4. **Production back to verification and evals:** incidents, reconciliation failures, policy changes, and observed outcomes that require a revised contract or new regression case.
+### 4. Release, observation and recovery flow
 
-For example, a timeout-after-commit incident becomes a duplicate-effect property, a controlled fault-injection scenario, and an acceptance criterion backed by durable payment and reconciliation evidence. Each artifact refers to the same intended operation and the relevant implementation and policy versions.
+```mermaid
+flowchart TD
+    ACCEPT["Accepted candidate and evidence manifest"] --> AUTH{"Deployment authorized?"}
+    AUTH -->|"No"| WAIT["Retain recommendation; await decision"]
+    AUTH -->|"Yes"| ID["Verify artifact and policy identity"]
+    ID --> MATCH{"Matches assessed candidate?"}
+    MATCH -->|"No"| HOLD["Hold; update impact analysis and evidence"]
+    MATCH -->|"Yes"| RELEASE["Project release mechanism<br/>Staged rollout where supported"]
+    RELEASE --> ENFORCE["Runtime enforcement<br/>Scoped identity, approval, limits and idempotency"]
+    ENFORCE --> OBSERVE["Measure outcomes and guardrails over declared window"]
+    OBSERVE --> SIGNAL{"Observed state"}
+    SIGNAL -->|"Criteria met"| COMPLETE["Record validated outcome"]
+    SIGNAL -->|"Window incomplete or evidence missing"| PENDING["Pending outcome; continue bounded observation"]
+    PENDING --> OBSERVE
+    SIGNAL -->|"Guardrail breach"| CONTAIN["Authorized containment and incident record"]
+    CONTAIN --> RECOVER{"Safe recovery action available and authorized?"}
+    RECOVER -->|"Yes"| ACTION["Rollback or compensate under project policy"]
+    RECOVER -->|"No"| ESCALATE["Escalate and reconcile uncertain effects"]
+    ACTION --> RECON["Confirm actual state and residual effects"]
+    ESCALATE --> RECON
+    RECON --> FEEDBACK["New failure trace and assurance cycle"]
+    COMPLETE --> IDLE["Idle until relevant change or monitoring trigger"]
+```
+
+Rollback is not a universal undo: reverting code does not reverse a payment, restore lost data, or guarantee schema compatibility. The project must define recovery actions, compensation limits, and who may authorize them. Missing telemetry is an unknown outcome, not a successful one.
+
+### 5. Artifact contracts and run identity
+
+The following are suggested logical records, not bundled APIs or enforced schemas. A runner should validate the fields it uses for control decisions.
+
+| Record | Minimum content | Producer and consumer |
+|---|---|---|
+| Objective contract | Outcome, measurement window, required properties, thresholds, authority | Request owner → controller and all skills |
+| Baseline manifest | Code/prompt/skill/tool/policy identities, datasets, graders, measured baseline | Controller → comparison and final evaluator |
+| Context packet | Relevant contract IDs, current diff, failure references, hypothesis, remaining budget | Context builder → agent |
+| Candidate manifest | Experiment ID, iteration, parent, patch digest, artifact versions | Candidate workspace → check runner |
+| Check result | Check ID/version, candidate ID, result, environment, bounds, raw evidence, resource use | Runner → ledger and evaluators |
+| Decision record | Evidence references, criteria results, residual risk, disposition, authority | Outcome validation and owner → controller |
+| Deployment observation | Deployed identity, observation interval, guardrails, reconciliation and incidents | Production systems → outcome validation |
+
+A shared experiment ID and candidate identity connect every record. Preserve raw artifacts alongside compact summaries. Apply retention and access policies appropriate to the project; sanitize secrets and personal data before placing evidence in model context or shared reports.
+
+### 6. Durable state, failure handling and implementation priorities
+
+A controller should distinguish at least **queued**, **running**, **evaluating**, **awaiting decision**, **blocked**, **stopped**, **accepted**, and **pending production outcome**. Accepted development evidence and validated production outcomes are different states.
+
+| Failure or interruption | Required response |
+|---|---|
+| Worker crashes or lease expires | Resume from a checkpoint under a new lease; reject stale-worker writes |
+| Tool request times out after possible commit | Reconcile the actual effect before deciding whether retry is safe |
+| Dependency outage or invalid fixture | Classify as environment/harness failure; preserve the failed run |
+| Budget exhausted or improvement plateaus | Stop and report the best valid candidate and remaining gaps |
+| Policy changes during an experiment | Invalidate affected evidence and reauthorize affected actions |
+| Candidate or configuration drifts after evaluation | Hold promotion until identity and impact are resolved |
+| Model output fails the expected schema | Reject the control message; bounded repair only within budget |
+| Evaluation cases leak into optimization context | Record contamination; rebuild protected evaluation coverage |
+| Telemetry stops during rollout | Mark outcome unknown and follow the project's rollout policy |
+
+Build only the infrastructure justified by the workflow:
+
+1. **Minimum viable runner:** fixed objective, isolated workspace, versioned baseline, deterministic checks, evidence ledger, bounded iterations, and explicit promotion.
+2. **Efficiency controls:** impact-based retrieval, validated context packets, dependency-aware reuse, and measurement of total tokens and accepted outcomes.
+3. **Continuous operation:** event deduplication, leases, checkpoints, protected evaluation access, identity checks at release, operational observation, and authorized recovery.
+
+This ordering avoids building a complex distributed controller before the checks can reliably distinguish a better candidate from a worse one.
+
 
 ## Skill guides and example prompts
 
-The prompts below use client-neutral skill names. In Claude Code, invoke the matching `/skill-name` command and supply the rest of the request. In Codex, prefix the skill name with `# Agent Skills for Software Factory Assurance
-
-Reusable agent skills for Claude and Codex to define correct behavior, evaluate implemented workflows, and validate business outcomes in AI-assisted software delivery.
-
-This repository helps engineering teams move from “the code was generated and the tests passed” to a more precise question: **what evidence shows that this version of the system preserves the required behavior and achieves the intended result?**
-
-The collection is based on Bijit Ghosh's article, **“Formally Verified, Still Unsafe. Specification Gaps and Residual Risk in Agentic Software.”**
-
-## Contents
-
-- [What this repository provides](#what-this-repository-provides)
-- [Choose a skill](#choose-a-skill)
-- [Repository structure](#repository-structure)
-- [Installation and first use](#installation-and-first-use)
-- [The assurance workflow](#the-assurance-workflow)
-- [Architecture and execution flow](#architecture-and-execution-flow)
-- [Skill guides and example prompts](#skill-guides-and-example-prompts)
-- [Worked example: refund processing](#worked-example-refund-processing)
-- [Evidence and decision standards](#evidence-and-decision-standards)
-- [Using the skills in a delivery pipeline](#using-the-skills-in-a-delivery-pipeline)
-- [Limitations and validation status](#limitations-and-validation-status)
-- [Contributing](#contributing)
-- [Background and attribution](#background-and-attribution)
-
-## What this repository provides
-
-The repository contains three instruction-based skills. Each includes a `SKILL.md` entry point, supporting reference guidance, and `agents/openai.yaml` UI metadata.
-
-They guide an agent through assurance tasks using the requirements, code, tools, and evidence available in the target project. They can be used independently or together.
-
-**The repository does not currently include an executable model checker, evaluation harness, CI workflow, production policy engine, or sample application.** When a skill calls for a check, the agent must use the project's available tooling, create appropriate project-specific artifacts within the task scope, or clearly report that the check was not run.
-
-Intended users include platform engineers, engineering leads, architects, agent developers, reliability teams, and reviewers responsible for consequential software changes.
-
-### Core principles
-
-- A valid proof can still describe the wrong business requirement.
-- Safety and liveness require separate attention: preventing an unsafe action does not establish that a valid request will finish.
-- Empirical evaluations establish observed behavior within a sample and environment, not universal guarantees.
-- Evidence must identify the model, implementation, policy, configuration, and deployment it actually covers.
-- Runtime controls and operational feedback remain necessary after pre-release checks.
-- Verification depth should follow failure impact, reversibility, and exposure.
-- An agent's release recommendation is distinct from an authorized approval or deployment action.
-
-## Choose a skill
-
-| Skill | Main question | Typical outputs |
-|---|---|---|
-| [Software Factory Verification](software-factory-verification/SKILL.md) | What must remain true, and what evidence checks those properties? | Behavior contract, property map, verification results, counterexamples, specification gaps |
-| [Software Factory Evals](software-factory-evals/SKILL.md) | How does the implementation behave across representative and adverse scenarios? | Case manifest, grading rules, run evidence, candidate/baseline comparison, regression cases |
-| [Software Factory Outcome Validation](software-factory-outcome-validation/SKILL.md) | Did the delivered behavior meet the intended outcome, and is acceptance justified? | Acceptance evidence ledger, runtime-control assessment, residual-risk register, scoped recommendation |
-
-Start with **verification** when requirements or workflow behavior are unclear. Start with **evals** when the contract exists and you need to assess an implementation. Start with **outcome validation** when you have a candidate or deployment and need to assess acceptance evidence.
-
-Routine low-risk edits do not require the complete three-skill workflow.
-
-## Repository structure
-
-```text
-Agent-Skills/
-├── README.md
-├── software-factory-verification/
-│   ├── SKILL.md
-│   ├── agents/
-│   │   └── openai.yaml
-│   └── references/
-│       └── verification-record.md
-├── software-factory-evals/
-│   ├── SKILL.md
-│   ├── agents/
-│   │   └── openai.yaml
-│   └── references/
-│       └── eval-design.md
-└── software-factory-outcome-validation/
-    ├── SKILL.md
-    ├── agents/
-    │   └── openai.yaml
-    └── references/
-        └── outcome-record.md
-```
-
-The entry points describe when and how to use each skill. Supporting references supply record fields, examples, and decision guidance when needed; they are not executable schemas.
-
-## Installation and first use
-
-The shared `SKILL.md` instructions and references are written for both Claude and Codex. Choose the installation method for your client. The `agents/openai.yaml` files provide Codex-specific UI metadata; they are not required to understand or apply the workflow in Claude.
-
-### Claude Code
-
-Clone this repository, then copy the three complete skill folders into either:
-
-- `~/.claude/skills/` for personal use across projects.
-- `.claude/skills/` inside your target project for project-scoped use.
-
-Each destination must contain `<skill-name>/SKILL.md` and its supporting references. On Windows, the personal location is under `%USERPROFILE%\.claude\skills`.
-
-Invoke the installed skills with:
-
-```text
-/software-factory-verification Assess this project's critical workflow.
-/software-factory-evals Evaluate the candidate against the behavior contract.
-/software-factory-outcome-validation Review the release acceptance evidence.
-```
-
-These are three separate example requests. Claude Code can also select relevant skills automatically. Installation and invocation follow the [official Claude Code skills documentation](https://code.claude.com/docs/en/skills).
-
-### Claude web or desktop
-
-Package each skill folder as its own ZIP, preserving `SKILL.md` and `references/`. In Claude, go to **Customize > Skills**, choose **+ Create skill > Upload a skill**, upload each ZIP, and enable it. Code execution/file creation and any required organization permissions must be enabled.
-
-Then ask, for example:
-
-```text
-Use the software-factory-verification skill to assess the attached workflow.
-Identify missing evidence and distinguish proposed checks from executed checks.
-```
-
-Uploading a skill does not provide access to your local repository or CI tools. Supply the required artifacts or connect authorized tools; checks without execution access must be reported as not run. See [Claude's custom skill instructions](https://support.claude.com/en/articles/12512180-use-skills-in-claude) for current interface and account requirements.
-
-### Codex
-
-In an environment with the bundled `skill-installer` skill, request:
-
-```text
-Use $skill-installer to install these skills from bijit-ghosh/Agent-Skills:
-- software-factory-verification
-- software-factory-evals
-- software-factory-outcome-validation
-```
-
-Alternatively, copy the three complete skill folders to `$CODEX_HOME/skills`, or `~/.codex/skills` when no custom location is configured. On Windows, the default directory is under `%USERPROFILE%\.codex\skills`.
-
-Invoke a skill with `$software-factory-verification`, `$software-factory-evals`, or `$software-factory-outcome-validation` in your request.
-
-### Shared setup checks
-
-Download or clone the repository before manual installation:
-
-```bash
-git clone https://github.com/bijit-ghosh/Agent-Skills.git
-```
-
-Copy the individual skill folders, not the entire repository as one skill. Preserve their supporting references. If a destination already exists, review local changes before updating it.
-
-GitHub publication does not install skills in any client. After installation, invoke a skill and confirm the client loads its `SKILL.md`. Check the destination and folder nesting if it cannot find the skill.
-
-The installation instructions follow the respective client conventions. This repository does not yet publish end-to-end execution results for each client; portability of the instructions is not a claim of identical tool access or behavior.
-
-### Give the agent a concrete target
-
-A useful starting request identifies:
-
-| Input | Why it matters |
-|---|---|
-| Workflow and business objective | Defines what success means |
-| Repository, branch, and candidate revision | Establishes the implementation under assessment |
-| Authoritative requirements and policies | Prevents the agent from inventing acceptance rules |
-| Known incidents or failure scenarios | Focuses coverage on demonstrated risk |
-| Available test, model, and telemetry tools | Determines what can actually be checked |
-| Allowed environments and side effects | Bounds execution |
-| Time, cost, and run limits | Makes stopping conditions explicit |
-| Desired deliverables | Separates a design exercise from an executed evaluation |
-
-The skills should identify missing material and distinguish proposed criteria from approved requirements.
-
-## The assurance workflow
-
-```mermaid
-flowchart TD
-    A[Business intent and requirements] --> B[Behavior contract]
-    B --> C[Properties and verification]
-    B --> D[Implementation evaluations]
-    C --> E[Outcome and acceptance evidence]
-    D --> E
-    E --> F[Scoped acceptance recommendation]
-    F --> G[Authorized release with runtime controls]
-    G --> H[Telemetry, incidents, and reconciliation]
-    H --> B
-    H --> D
-```
-
-The diagram describes a process to implement in a project. These stages are not automatically orchestrated by this repository.
-
-1. **Define intent.** Establish objectives, constraints, permitted actions, and unacceptable outcomes.
-2. **Make behavior explicit.** Describe states, transitions, guards, authorization, approvals, safety properties, and liveness assumptions.
-3. **Select and execute checks.** Match verification techniques and evaluations to the relevant failure modes.
-4. **Assemble evidence.** Connect results to requirement IDs and exact artifact versions.
-5. **Assess acceptance.** Separate demonstrated success, known failures, and insufficient evidence.
-6. **Observe and improve.** Feed incidents and counterexamples back into the contract, tests, models, and runtime controls.
-
-## Architecture and execution flow
-
-This is a reference architecture for applying the skills in a software factory. **The skill instructions are provided by this repository; the agent runtime, project tools, evidence storage, release system, and production controls are supplied by the consuming project.** Arrows describe information and decision flow, not prebuilt integrations.
-
-### Component architecture
-
-```mermaid
-flowchart TB
-    INPUT["Project inputs<br/>Business intent, policies, code, candidate identity"]
-    AGENT["Agent runtime<br/>Select relevant skills and apply task scope"]
-
-    subgraph SKILLS["Provided by this repository: instruction layer"]
-        V["Verification skill<br/>Contract, properties, traceability"]
-        E["Evals skill<br/>Scenarios, graders, comparisons"]
-        O["Outcome validation skill<br/>Acceptance evidence and residual risks"]
-    end
-
-    subgraph PROJECT["Provided by the consuming project"]
-        TOOLS["Authorized check tools<br/>Model checks, tests, simulations, eval harness"]
-        RECORDS["Versioned evidence<br/>Contracts, results, traces, build and policy IDs"]
-        OWNER["Authorized decision owner or release policy"]
-        RELEASE["Release system and runtime controls<br/>Identity, approvals, limits, idempotency"]
-        SIGNALS["Operational evidence<br/>Telemetry, incidents, reconciliation, outcomes"]
-    end
-
-    INPUT --> AGENT
-    AGENT --> V
-    AGENT --> E
-    AGENT --> O
-    V -->|"Contract and property IDs"| E
-    V -->|"Selected verification checks"| TOOLS
-    E -->|"Cases and grading rules"| TOOLS
-    V -->|"Contract and traceability"| RECORDS
-    TOOLS -->|"Results, bounds, logs, counterexamples"| RECORDS
-    RECORDS --> O
-    O -->|"Scoped recommendation"| OWNER
-    OWNER -->|"Release authorization"| RELEASE
-    RELEASE --> SIGNALS
-    SIGNALS --> RECORDS
-    SIGNALS -->|"New failure modes and changed assumptions"| AGENT
-```
-
-The same agent can apply all three skills sequentially. Separate agents or an orchestration service are optional implementation choices, not requirements of this collection.
-
-| Component | Responsibility | Boundary |
-|---|---|---|
-| Project inputs | Supply authoritative intent, constraints, and the exact candidate | Missing policy is unresolved, not invented |
-| Agent runtime | Read the relevant skill and coordinate the requested work | Operates within existing permissions and resource limits |
-| Verification skill | Define properties and connect them to implementation and checks | Model correctness does not establish implementation correctness |
-| Evals skill | Assess implemented behavior using scenarios and explicit graders | Observed success is limited by coverage and sample size |
-| Project check tools | Execute checks and expose reproducible results | Unavailable tools produce a not-run or inconclusive result |
-| Evidence records | Preserve versions, assumptions, traces, and result provenance | No database or evidence service is bundled here |
-| Outcome validation skill | Assess business acceptance and residual risk | Recommendation does not grant release authority |
-| Decision owner and release system | Apply actual release policy and authorization | Mandatory failed gates cannot be waived by an aggregate score |
-| Runtime controls and telemetry | Constrain execution and observe actual outcomes | Operational failures feed back into assurance work |
-
-### Execution and decision flow
-
-```mermaid
-flowchart TD
-    START["Change or review request"] --> SCOPE["Identify objective, candidate, risk, and authorized scope"]
-    SCOPE --> CONTRACT["Define or update behavior contract"]
-    CONTRACT --> READY{"Required policy and assumptions clear?"}
-    READY -->|"No"| CLARIFY["Record gaps and obtain authoritative clarification"]
-    CLARIFY --> CONTRACT
-    READY -->|"Yes"| PLAN["Select affected properties, evaluation cases, and run budget"]
-    PLAN --> RUN["Run available authorized checks"]
-    RUN --> EVIDENCE["Collect versioned results and implementation evidence"]
-    EVIDENCE --> VALIDATE["Validate outcomes, runtime controls, and evidence coverage"]
-    VALIDATE --> DECISION{"Acceptance assessment"}
-    DECISION -->|"Mandatory criterion failed"| HOLD["Hold and document the failure"]
-    DECISION -->|"Evidence incomplete"| UNKNOWN["Insufficient evidence: identify missing checks or records"]
-    DECISION -->|"Criteria met or permitted conditions documented"| RECOMMEND["Issue scoped acceptance recommendation"]
-    HOLD --> REWORK["Correct contract or implementation within scope"]
-    REWORK --> PLAN
-    UNKNOWN --> FOLLOWUP["Gather evidence within remaining authorization and budget"]
-    FOLLOWUP --> EVIDENCE
-    RECOMMEND --> AUTH{"Release authorized?"}
-    AUTH -->|"No or pending"| WAIT["Stop at recommendation; await decision"]
-    AUTH -->|"Yes"| DEPLOY["Release through project system with runtime controls"]
-    DEPLOY --> OBSERVE["Measure outcomes and inspect operational evidence"]
-    OBSERVE --> FEEDBACK{"New failure or changed assumption?"}
-    FEEDBACK -->|"Yes"| SCOPE
-    FEEDBACK -->|"No"| CONTINUE["Continue the agreed observation plan"]
-```
-
-Rework and evidence collection are bounded loops. Stop when the agreed budget is exhausted, repeated attempts produce no new evidence, an external side effect is uncertain, or additional authorization is required. Record the remaining gap instead of treating repeated retries as progress.
-
-### What moves between the skills
-
-1. **Verification to evals:** requirement IDs, state transitions, safety and liveness properties, assumptions, and known counterexample traces.
-2. **Checks to outcome validation:** actual run results, tested candidate identity, coverage limits, grader definitions, failure traces, and runtime-control evidence.
-3. **Outcome validation to the decision owner:** criterion-level findings, residual risks, proposed conditions, and an acceptance recommendation.
-4. **Production back to verification and evals:** incidents, reconciliation failures, policy changes, and observed outcomes that require a revised contract or new regression case.
-
-For example, a timeout-after-commit incident becomes a duplicate-effect property, a controlled fault-injection scenario, and an acceptance criterion backed by durable payment and reconciliation evidence. Each artifact refers to the same intended operation and the relevant implementation and policy versions.
-
-. In Claude web or desktop, name the enabled skill in your message.
+The prompts below use client-neutral skill names. In Claude Code, invoke the matching `/skill-name` command and supply the rest of the request. In Codex, prefix the skill name with `$`. In Claude web or desktop, name the enabled skill in your message.
 
 ### 1. Software Factory Verification
 
