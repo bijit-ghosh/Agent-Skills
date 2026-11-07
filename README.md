@@ -18,6 +18,7 @@ The collection is based on Bijit Ghosh's article, **“Formally Verified, Still 
 - [Worked example: refund processing](#worked-example-refund-processing)
 - [Evidence and decision standards](#evidence-and-decision-standards)
 - [Using the skills in a delivery pipeline](#using-the-skills-in-a-delivery-pipeline)
+- [Bounded recursive improvement with context and evaluations](#bounded-recursive-improvement-with-context-and-evaluations)
 - [Limitations and validation status](#limitations-and-validation-status)
 - [Contributing](#contributing)
 - [Background and attribution](#background-and-attribution)
@@ -758,6 +759,220 @@ For critical workflows, consider evidence across five layers:
 3. **Empirical validation:** tests, evaluations, simulations, and fault injection.
 4. **Runtime enforcement:** scoped identity, approvals, limits, and idempotency.
 5. **Telemetry and feedback:** traces, incidents, reconciliation, and recovery evidence.
+
+## Bounded recursive improvement with context and evaluations
+
+Use the three skills as an assurance loop around a candidate implementation, prompt, workflow, or skill. Here, **recursive self-improvement (RSI)** means a system uses measured failures from one iteration to propose and evaluate the next version of its own working artifacts. It does not mean that the underlying foundation model retrains itself, or that improvement and convergence are guaranteed.
+
+This section is a **design for a runner to implement**, not an always-on service included in this repository. A CI job, workflow engine, or explicitly authorized agent session must own scheduling, persistent state, budgets, and execution. The same design can guide Claude or Codex; client-specific execution capabilities still apply.
+
+### Establish the baseline before optimizing
+
+Freeze a baseline manifest before making changes:
+
+| Baseline field | Required decision |
+|---|---|
+| Objective | Observable business outcome, target, measurement window, and source of authority |
+| Candidate identity | Code, prompts, skill instructions, tools, dependencies, and policy/configuration versions |
+| Behavior contract | Safety and liveness properties, acceptance criteria, and environmental assumptions |
+| Evaluation sets | Development cases, regression cases, and protected final holdout with dataset versions |
+| Grading | Deterministic assertions, semantic rubric where necessary, and grader versions |
+| Comparison | Matched cases and environment, repeat policy, tolerance, and uncertainty treatment |
+| Resource envelope | Maximum iterations, total tokens, elapsed time, cost, tool calls, and allowed side effects |
+| Promotion policy | Mandatory gates, acceptable quality changes, and who may authorize promotion |
+
+Run the unchanged baseline and retain raw results. If baseline execution is unavailable, label it missing; do not report later results as demonstrated improvement over an unmeasured baseline.
+
+**Optimization priority:** preserve mandatory safety and authorization constraints, meet outcome and quality criteria, then reduce resource use within those constraints. A smaller token count does not compensate for an unsafe or incorrect result.
+
+### Architecture of the improvement loop
+
+```mermaid
+flowchart TD
+    START["Authorized objective and frozen evaluation baseline"] --> CONTEXT["Build minimal versioned context packet"]
+    CONTEXT --> RUN["Run deterministic checks and relevant development evals"]
+    RUN --> CLASSIFY{"Result"}
+    CLASSIFY -->|"Harness or dependency failure"| ENV["Repair environment or record blocked state"]
+    ENV --> LIMIT
+    CLASSIFY -->|"Outcome gap or regression"| DIAG["Identify a reproducible failure and one change hypothesis"]
+    DIAG --> PATCH["Create isolated candidate change"]
+    PATCH --> CHECK["Rerun affected checks and protected regression gates"]
+    CHECK --> COMPARE{"Candidate improves under fixed rules?"}
+    COMPARE -->|"No or uncertain"| REJECT["Reject candidate; retain evidence and previous best"]
+    COMPARE -->|"Yes"| BEST["Record provisional best candidate"]
+    REJECT --> LIMIT{"Budget and progress permit another iteration?"}
+    BEST --> READY{"Development acceptance criteria met?"}
+    READY -->|"No"| LIMIT
+    LIMIT -->|"Yes"| CONTEXT
+    LIMIT -->|"No"| STOP["Stop with best valid candidate and unresolved gaps"]
+    READY -->|"Yes"| FINAL["Run full required acceptance checks and protected holdout"]
+    FINAL --> PASS{"Final criteria met with adequate evidence?"}
+    PASS -->|"No"| STOP
+    PASS -->|"Yes"| VALIDATE["Outcome validation and residual-risk recommendation"]
+    VALIDATE --> AUTH["Promotion through existing authorization policy"]
+    AUTH --> OBSERVE["Observe deployed outcomes over declared window"]
+    OBSERVE --> CHANGE{"New incident, drift, or authorized change?"}
+    CHANGE -->|"Yes"| START
+    CHANGE -->|"No"| IDLE["Remain idle until a relevant trigger"]
+```
+
+The loop improves a candidate in an isolated environment. Promotion to a shared branch, production environment, or active skill library is a distinct action governed by the user's existing authorization.
+
+### Assign each skill a specific role
+
+| Skill or runner component | Responsibility in the loop |
+|---|---|
+| Verification | Maintain the behavior contract, analyze change impact, and identify affected properties |
+| Evals | Establish the baseline, execute cases, diagnose failures, and compare candidate behavior |
+| Outcome validation | Decide whether the evidence supports the actual outcome and acceptance criteria |
+| Context builder | Retrieve only the artifacts needed for the current hypothesis and checks |
+| Deterministic runner | Enforce state transitions, budgets, check selection, and result recording |
+| Experiment ledger | Preserve candidate lineage, costs, failures, decisions, and reusable evidence |
+| Authorized promotion mechanism | Make an accepted candidate active without silently broadening scope |
+
+Avoid asking the model to decide everything on every cycle. The runner should make mechanical decisions from explicit rules; use model reasoning for ambiguous intent, failure diagnosis, and proposed changes.
+
+### Optimize context without losing the contract
+
+Build a small context packet for each iteration instead of replaying the entire conversation:
+
+```yaml
+# Illustrative record shape, not a configuration file consumed by this repository.
+iteration_id: experiment-004
+objective_ref: requirements/outcome-contract
+baseline_ref: evidence/baseline-manifest
+candidate_ref: candidate-revision
+policy_ref: policy-version
+relevant_properties: [AUTH-01, IDEMPOTENCY-01]
+failure_refs: [evidence/run-003/timeout-after-commit]
+changed_artifact_refs: [workflow/refund-retry]
+previous_hypothesis: retry lacks durable reconciliation
+current_hypothesis: reconcile unknown outcomes before resubmission
+required_check_refs: [checks/refund-regressions, checks/authorization]
+remaining_budget_ref: evidence/budget-ledger
+```
+
+Use these practices:
+
+- **Keep stable context separate from changing context.** Reference the contract, policy, and baseline once; supply the current diff, relevant failure trace, and remaining budget for the next step.
+- **Retrieve by requirement and artifact IDs.** Load the state transition and source path implicated by the failure instead of the whole repository.
+- **Summarize observations with provenance.** A short failure summary must link to raw evidence and preserve uncertainty, authorization boundaries, and irreversible side effects.
+- **Load references on demand.** Read the evaluation reference for grader design, for example, rather than loading every skill reference for every action.
+- **Treat generated memory as fallible.** Validate consequential assertions against authoritative artifacts. Logs, retrieved files, and previous model outputs are evidence inputs, not permission to change policies.
+- **Invalidate stale context.** A change in policy, tools, dependencies, assumptions, or relevant code requires impact analysis before reusing prior conclusions.
+- **Reuse deterministic results only when justified.** Key reusable results to all relevant input, tool, environment, and configuration versions. Do not reuse old outputs as fresh stochastic trials or current production observations.
+- **Track context cost explicitly.** Record input/output tokens when available, tool-output volume, repeated retrievals, and time. Mark unavailable usage data as unknown rather than estimating it as measured.
+
+A compact context packet should reduce irrelevant material; it must not hide evidence needed to reject an unsafe candidate.
+
+### Make the execution path more deterministic
+
+Use deterministic mechanisms wherever the task permits:
+
+| Prefer | Instead of |
+|---|---|
+| Explicit state machine and guards | Unbounded natural-language planning on every iteration |
+| Schema-validated case and result records | Free-form prose used as executable control signals |
+| Assertions over durable state and side effects | Judging correctness from the final assistant response |
+| Versioned fixtures and controlled fault schedules | Depending on accidental timing to reproduce a failure |
+| Fixed check-selection rules plus change-impact mapping | Asking the model to choose a completely new test plan each cycle |
+| Scripted comparison of fixed acceptance thresholds | Letting a candidate redefine what counts as success |
+| Recorded candidate identity and repeat settings | Comparing runs with unexplained configuration differences |
+
+Seeds or low sampling variability can help reproducibility where supported, but do not guarantee identical model or external-service behavior. Preserve repeated trials and uncertainty estimates for stochastic components. If a semantic grader is needed, version it and validate its judgments; do not let a passing model judgment override a failed deterministic safety assertion.
+
+### Evaluate improvements without gaming the baseline
+
+Every candidate needs a testable hypothesis, such as “reconciliation before retry prevents duplicate committed effects without increasing unresolved requests beyond the approved limit.”
+
+Keep candidates small enough that the result can be attributed to an identifiable change. Compare against the current best and the frozen baseline using matched conditions. Report:
+
+- Outcome completion and critical violations, with numerators and denominators.
+- Regressions by requirement and failure class.
+- Input/output tokens, tool calls, total latency, and cost where measured.
+- Total experiment cost, including rejected candidates and retries.
+- Uncertainty, missing runs, and harness errors.
+
+For efficiency, use **cost or tokens per accepted outcome** alongside absolute resource usage and quality metrics. A candidate that becomes cheap by refusing difficult tasks must not appear better solely because of lower average tokens.
+
+Use cheap checks for early rejection, followed by affected behavioral checks. Before final acceptance, run the full required suite; impacted-only checks cannot establish coverage that was never exercised.
+
+Keep final holdout cases outside the optimization context and restrict access through the runner or evaluator. Repeated adaptation to holdout results leaks information even without exposing case contents. After a failed final holdout, stop that acceptance attempt. If its cases become debugging material, move them to regression coverage and establish a fresh protected holdout before making a new generalization claim.
+
+Do not let the optimizing agent weaken acceptance thresholds, delete failing cases, modify the grader, or expand permissions to obtain a pass. Legitimate changes to requirements, graders, or datasets need an explicit new version and baseline decision; report them as a changed experiment.
+
+### Persist state and operate continuously
+
+A continuous runner should persist an experiment record containing:
+
+```text
+objective and contract versions
+baseline and current-best candidate identities
+iteration and parent candidate IDs
+change hypothesis and patch reference
+case, grader, tool, and environment versions
+check results and evidence locations
+measured resource usage and remaining budget
+decision: reject / provisional-best / accepted / blocked / stopped
+reason, unresolved gaps, and required next action
+```
+
+Use a single active owner or an equivalent concurrency guard for an experiment. Checkpoint between stages. Resume from durable records after interruption and reconcile uncertain tool outcomes before retrying external actions.
+
+Schedule runs on relevant changes: code, prompts, skill instructions, policy, tools, dependencies, or observed incidents. Use periodic evaluation only when it serves a defined drift or outcome-measurement need. Do not repeatedly regenerate an already accepted candidate simply because a timer fired.
+
+### Stop conditions and promotion
+
+Continue only while the experiment remains authorized, within budget, and capable of producing useful new evidence.
+
+| Condition | Required behavior |
+|---|---|
+| Outcome criteria and mandatory gates met | Run final acceptance checks, record the recommendation, and end optimization |
+| Maximum iterations, tokens, cost, or time reached | Stop and report the best valid candidate and remaining gaps |
+| No meaningful gain for the declared number of trials | Stop or escalate with the observed plateau |
+| Repeated identical failure without new evidence | Stop repeating the same intervention |
+| Unknown external effect or unexpected live mutation | Reconcile the state; do not blindly retry |
+| Missing policy, tool access, or authoritative acceptance decision | Record the blocker and request only the needed input |
+| Critical regression | Reject the candidate and retain the previous valid version |
+| Post-release guardrail breach | Follow the authorized containment process and open a new assurance cycle |
+
+Set numeric limits and the minimum meaningful improvement before execution. This repository deliberately supplies no universal budget or success threshold.
+
+A development pass may justify a candidate recommendation while the business outcome still requires a production observation window. Keep those states separate. Where a target cannot be reached, the correct output is an evidence-backed limitation or blocker, not an endless loop or a weakened target.
+
+### Improving the skills themselves
+
+The same loop can propose revisions to these `SKILL.md` instructions. Treat a skill revision as a candidate artifact:
+
+1. Preserve the current skill as the baseline.
+2. Reproduce a failure using representative tasks and stable grading rules.
+3. Change the smallest relevant instruction or reference.
+4. Compare the old and new skill on both the failure and broader regression cases.
+5. Evaluate the final candidate on protected tasks and review its scope, permissions, and stopping behavior.
+6. Promote only through the existing approval policy; retain the previous version for recovery.
+
+This produces traceable improvements to instructions and workflows. It does not establish autonomous model-level self-improvement.
+
+### Example request for Claude or Codex
+
+```text
+Apply the verification, evals, and outcome-validation skills as a bounded
+improvement loop for the target workflow.
+
+First establish an executed baseline, an explicit outcome contract, protected
+regression gates, and a versioned evaluation plan. Propose numeric resource
+limits if none are supplied; do not start an unbounded run.
+
+For each iteration, use a minimal context packet, state one change hypothesis,
+create an isolated candidate, and run deterministic checks before more expensive
+evaluations. Keep the grader and acceptance criteria fixed. Track all iteration
+costs, including failures, and compare quality and tokens per accepted outcome.
+
+Stop when the criteria are met, the budget is exhausted, progress plateaus,
+or required evidence or authorization is missing. Report the best valid
+candidate, remaining uncertainty, and a promotion recommendation. Do not
+deploy or change active skills unless separately authorized.
+```
 
 ## Limitations and validation status
 
