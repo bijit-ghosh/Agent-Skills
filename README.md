@@ -4,7 +4,9 @@ Reusable agent skills for Claude and Codex to define correct behavior, evaluate 
 
 This repository helps engineering teams move from “the code was generated and the tests passed” to a more precise question: **what evidence shows that this version of the system preserves the required behavior and achieves the intended result?**
 
-The collection is based on Bijit Ghosh's article, **“Formally Verified, Still Unsafe. Specification Gaps and Residual Risk in Agentic Software.”**
+The collection is based on Bijit Ghosh's article, 
+https://medium.com/@bijit211987/formally-verified-still-unsafe-specification-gaps-and-residual-risk-in-agentic-software-998c436ccf6a
+**“Formally Verified, Still Unsafe. Specification Gaps and Residual Risk in Agentic Software.”**
 
 ## Contents
 
