@@ -1,8 +1,10 @@
 # Assurance benchmark: protocol, runner, and execution status
 
-This is a small, public, synthetic **decision-quality smoke benchmark** for the three assurance skills. It measures whether a model selects the expected next action and relevant checks from a supplied catalog. It does not execute payments, modify application code, demonstrate recursive improvement, or establish production safety.
+This is a small, public, synthetic **decision-quality smoke benchmark** for the verification, evals, and outcome-validation subset of the 15-skill collection. It measures whether a model selects the expected next action and relevant checks from a supplied catalog. It does not execute payments, modify application code, demonstrate recursive improvement, or establish production safety.
 
-## Execution results — 7 November 2026
+For the full lifecycle, see the [current architecture](../docs/ARCHITECTURE.md) and [16 public behavioral scenarios](../evals/README.md). The latter are designed but unexecuted; this benchmark does not score the full catalog.
+
+## Historical execution results — 7 November 2026
 
 | Evaluation | Actual execution | Result |
 |---|---|---|
@@ -26,7 +28,7 @@ Each model receives the same case facts, check catalog, action definitions, and 
 The conditions are:
 
 1. **Baseline:** common task instructions and case facts only.
-2. **Full:** baseline plus the three original assurance skills and their Markdown references. This condition does not include the 12 lifecycle skills added later.
+2. **Full:** baseline plus verification, evals, and outcome-validation and their Markdown references. This condition does not load the other 12 skills.
 3. **Selective:** baseline plus one relevant skill and its references, chosen by a fixed per-case mapping.
 
 Selective routing is curated in advance, not learned by the model. Any measured benefit includes that routing advantage; this is not an evaluation of automatic skill selection. The full condition deliberately includes more context and is a context strategy comparison, not necessarily the most efficient real-world client configuration.

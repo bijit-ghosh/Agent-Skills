@@ -19,3 +19,9 @@ Preserve author notices and document sources in [provenance](docs/PROVENANCE.md)
 
 Keep public smoke cases separate from protected evaluation data. Do not add a live inference call to normal CI: it would require credentials and incur costs. Model evaluations should be separately authorized and budgeted.
 
+
+## Keep the collection synchronized
+
+When capabilities change, update the catalog, README skill table and lifecycle diagram, architecture responsibilities, task examples, and evaluation coverage together. Keep skill-local references standalone. Update repository About metadata if the public purpose or scope changes.
+
+Describe implemented utilities separately from project-supplied infrastructure. Preserve historical benchmark scope and run identity; do not relabel old results as coverage for newly added skills. Link a completed CI run when making a dated validation claim.

@@ -1,6 +1,8 @@
 # Agent Skills for Software Factories
 
-**Created and maintained by Bijit Ghosh.** A collection of 15 focused skills for taking agent-assisted software from intent through implementation, evaluation, release, and outcome validation.
+[![Validation](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml/badge.svg)](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml) · [MIT licensed](LICENSE) · **15 focused skills** · **Claude + Codex**
+
+**Created and maintained by Bijit Ghosh.** Build software factories around explicit behavior, traceable evidence, and measurable outcomes. These 15 skills connect specification, implementation, review, security, performance, evaluation, delivery, operations, and bounded improvement.
 
 The goal is practical: define the behavior you need, build a bounded change, collect evidence, and accept it only when the result meets the original target. A passing test or a higher evaluation score does not establish that the business outcome is correct.
 
@@ -10,7 +12,7 @@ The assurance foundation comes from my article, [Formally Verified, Still Unsafe
 
 ## What you get
 
-- **15 independently installable skills**, including the original verification, evals, and outcome-validation skills.
+- **15 independently installable skills**, covering the lifecycle from intent to observed outcome.
 - A [machine-readable catalog](catalog.json), an installer that refuses overwrites, and repository validation utilities.
 - A deterministic [development promotion gate](software-factory-improvement/scripts/promotion_gate.py) for screening candidate improvements.
 - A [public smoke benchmark](benchmark/README.md), [16 lifecycle review scenarios](evals/README.md), utility tests, and a Windows/Linux CI workflow.
@@ -54,29 +56,43 @@ python scripts/validate.py
 
 ### Claude Code
 
-Install selected skills into your personal skill directory:
+Install a small delivery starter set into your personal skill directory:
 
 ```bash
-python scripts/install.py --dest ~/.claude/skills software-factory-verification software-factory-evals software-factory-outcome-validation
+python scripts/install.py --dest ~/.claude/skills software-factory-routing software-factory-specification software-factory-planning software-factory-implementation software-factory-review
 ```
 
-Then invoke a skill with, for example, `/software-factory-verification`. For project-only use, set `--dest` to the target project's `.claude/skills` directory. See [Claude Code's official skill documentation](https://code.claude.com/docs/en/skills).
+Then invoke a skill with, for example, `/software-factory-routing`. For project-only use, set `--dest` to the target project's `.claude/skills` directory. See [Claude Code's official skill documentation](https://code.claude.com/docs/en/skills).
 
 ### Codex
 
 Use the built-in skill installer when available:
 
 ```text
-$skill-installer install https://github.com/bijit-ghosh/Agent-Skills/tree/main/software-factory-verification
+$skill-installer install https://github.com/bijit-ghosh/Agent-Skills/tree/main/software-factory-routing
 ```
 
 Or use this repository's installer with the documented personal skill directory:
 
 ```bash
-python scripts/install.py --dest ~/.agents/skills software-factory-verification software-factory-evals software-factory-outcome-validation
+python scripts/install.py --dest ~/.agents/skills software-factory-routing software-factory-specification software-factory-planning software-factory-implementation software-factory-review
 ```
 
 For project scope, use the target project's `.agents/skills` directory. Invoke the installed skill by name or select it in your client. Older installations may use a configured skill directory; choose the directory your client discovers. See [OpenAI's official skill documentation](https://learn.chatgpt.com/docs/build-skills).
+
+### Choose an installation set
+
+The commands above install a starter set, not the entire collection. Add only the capabilities your work needs by passing their full names to the same installer.
+
+| Set | Skill names, each prefixed with `software-factory-` |
+|---|---|
+| Delivery starter | routing, specification, planning, implementation, review |
+| Consumer and risk checks | interfaces, security, performance |
+| Assurance and acceptance | verification, evals, outcome-validation |
+| Release and runtime | delivery, operations |
+| Context and improvement | context, improvement |
+
+All 15 skills are in [catalog.json](catalog.json). Installing a skill makes it available; it does not mean it must be loaded for every task.
 
 ### Installation behavior
 
@@ -86,35 +102,66 @@ To update a skill, compare the new folder with your installed copy and preserve 
 
 ## How it works
 
-The flow below is a reference workflow, not a mandatory sequence. Enter at the stage your task needs.
+The software factory has five stages, supported throughout by routing and context. Each stage produces evidence that the next can inspect. Enter at the stage the task needs; a small fix does not require a full lifecycle run.
 
 ```mermaid
-flowchart TD
-    U["User outcome and authorized scope"] --> R["Route to the next decision"]
-    R --> S["Specification: behavior, invariants, acceptance examples"]
-    S --> P["Planning: dependencies, reversible increments"]
-    P --> C["Context: retrieve relevant sources and evidence"]
-    C --> I["Implementation and interface behavior"]
-    I --> Q["Review and relevant security/performance checks"]
-    Q --> V["Verification: properties and assumption limits"]
-    V --> E["Evals: fixed graders and representative failure cases"]
-    E --> O{"Outcome evidence sufficient?"}
-    O -->|No| F["Record failure or missing evidence"]
-    F --> B{"Within scope and budget?"}
-    B -->|Yes| C
-    B -->|No| H["Hold and report unresolved outcome"]
-    O -->|Yes| D["Delivery: exact artifact and recovery plan"]
-    D --> A{"Deployment authorized?"}
-    A -->|No| Ready["Deliver reviewable artifact"]
-    A -->|Yes| Run["Deploy and observe"]
-    Run --> Ops["Operations: reconcile effects and verify outcome"]
-    Ops --> Learn["Regression fixtures and bounded improvement"]
-    Learn -.-> S
+flowchart TB
+    Request["Requested outcome and authorized scope"] --> Route["Routing"]
+    subgraph Define["DEFINE"]
+        Spec["Specification"] --> Plan["Planning"]
+    end
+    subgraph Build["BUILD"]
+        Impl["Implementation"] --> UI["Interfaces"]
+    end
+    subgraph Check["CHECK RELEVANT RISKS"]
+        Review["Review"]
+        Sec["Security"]
+        Perf["Performance"]
+    end
+    subgraph Prove["ASSESS EVIDENCE"]
+        Verify["Verification"] --> Evals["Evals"]
+        Evals --> Outcome["Outcome validation"]
+    end
+    subgraph Operate["DELIVER AND OBSERVE"]
+        Delivery["Delivery"] --> Ops["Operations"]
+    end
+    Route --> Spec
+    Route -->|"Enter at the stage needed"| Impl
+    Route -->|"Incident"| Ops
+    Plan --> Impl
+    UI --> Review
+    UI --> Sec
+    UI --> Perf
+    Review --> Verify
+    Sec --> Verify
+    Perf --> Verify
+    Outcome --> Decision{"Criteria met and evidence current?"}
+    Decision -->|"Yes"| Delivery
+    Decision -->|"No"| Gap["Classify defect or missing evidence"]
+    Gap --> Route
+    Ops --> Feedback["Observed outcomes and failure traces"]
+    Feedback --> Improve["Improvement"]
+    Improve -->|"Bounded candidate"| Route
+    Context["Context: scoped retrieval and evidence identity"] -.-> Define
+    Context -.-> Build
+    Context -.-> Check
+    Context -.-> Prove
+    Context -.-> Operate
 ```
 
-Evidence travels with the artifact: requirement ID → implementation revision → case/grader identity → run/trace → observed state → acceptance decision. Cached evidence is valid only while the inputs it depends on remain unchanged.
+| Stage | Skills | Evidence passed forward |
+|---|---|---|
+| Define | specification, planning | Behavior contract, acceptance examples, runnable increments |
+| Build | implementation, interfaces | Patch, consumer behavior, relevant regression checks |
+| Check | review, security, performance | Findings, boundary checks, comparable measurements |
+| Assess | verification, evals, outcome-validation | Property scope, trial results, acceptance decision |
+| Deliver and learn | delivery, operations, improvement | Release identity, observed effects, bounded improvement record |
 
-The [detailed architecture guide](docs/ARCHITECTURE.md) expands this into context retrieval, trust boundaries, evaluation gates, rollout, recovery, and durable-state designs.
+**Routing** chooses the next decision. **Context** supplies relevant sources and preserves evidence identity across every stage. The improvement skill can also be invoked before release to optimize a prompt, skill, or retrieval policy.
+
+Evidence travels with the artifact: requirement ID → implementation revision → case/grader identity → run/trace → observed state → acceptance decision. A pre-release recommendation and a validated production outcome are different decisions. Deployment remains within authorized scope.
+
+See the [complete architecture and handoff contracts](docs/ARCHITECTURE.md) and [examples for all 15 skills](docs/EXAMPLES.md).
 
 ## Evaluation-driven improvement
 
@@ -139,7 +186,7 @@ flowchart TD
     Protected -.-> Final
 ```
 
-The [promotion gate](software-factory-improvement/references/promotion-contract.md) implements a small part of this design. It checks matched evaluation identities, complete trials, zero candidate critical failures, quality preservation, and a minimum gain. Its positive result is **eligible for final evaluation**, not permission to deploy.
+The improvement skill connects context/performance diagnosis, candidate implementation, verification, evals, and outcome validation. The [promotion gate](software-factory-improvement/references/promotion-contract.md) implements a small part of this design. It checks matched evaluation identities, complete trials, zero candidate critical failures, quality preservation, and a minimum gain. Its positive result is **eligible for final evaluation**, not permission to deploy.
 
 It trusts supplied measurements and does not enforce statistical significance, filesystem isolation, or continuous scheduling. Those require an external runner and protected evidence store. Keep the candidate away from its grader, final cases, and promotion credentials.
 
@@ -147,13 +194,15 @@ Stop when the target is reached, the budget is exhausted, or progress stalls. Fi
 
 ## Practical examples
 
+Each example selects a path through the lifecycle. See [15 skill-specific prompts and expected outputs](docs/EXAMPLES.md).
+
 **A refund timed out after submission**
 
 ```text
-Use software-factory-verification to define the refund invariants and identify
-the authoritative state to reconcile before retrying. Then use
-software-factory-evals to test duplicate requests, stale approval, and
-commit-with-timeout. Report which outcomes remain unknown.
+Use software-factory-operations to reconcile the actual payment state before
+retrying. Use software-factory-implementation for a bounded fix, verification
+for the refund invariant, and evals for duplicate, stale-approval, and timeout
+cases. Use outcome-validation to assess the resulting durable state.
 ```
 
 **A feature spans an API and a UI**
@@ -188,11 +237,11 @@ python -m unittest discover -s benchmark -p "test_*.py" -v
 | Catalog, metadata, standalone reference checks | Executed locally |
 | Installer, packaging, and promotion-gate tests | Executed locally; see [validation record](docs/VALIDATION.md) |
 | Existing benchmark harness tests | Executed locally; 9 passed |
-| Cross-platform repository CI | Configured; consult the [actual workflow runs](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml) |
+| Cross-platform repository CI | Windows/Linux × Python 3.10/3.12 passed for the lifecycle upgrade; [recorded run](https://github.com/bijit-ghosh/Agent-Skills/actions/runs/42814103410). See the badge for current status. |
 | Astra / Opus model benchmark | Historical preflight blocked; 0 inference calls |
 | Lower token use, production effectiveness, or superiority over another collection | Not established |
 
-The benchmark's `full` condition still means the **three original assurance skills**, not all 15 skills. Its 10 public synthetic cases are a smoke benchmark, not a protected final set. See [protocol and recorded results](benchmark/README.md).
+The benchmark's `full` condition means the **verification, evals, and outcome-validation subset**; lifecycle coverage is tracked separately in [16 designed scenarios](evals/README.md). Its 10 public synthetic cases are a smoke benchmark, not a protected final set. See [protocol and recorded results](benchmark/README.md).
 
 ## Ownership, reference, and contributions
 

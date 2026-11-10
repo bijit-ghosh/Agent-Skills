@@ -15,7 +15,7 @@ The first utility run encountered five filesystem errors because the sandbox's d
 
 The external skill-creator validator is optional and belongs to the local Codex installation; repository checks require only Python 3.10+. Generated Codex UI metadata was checked alongside the skill entrypoints.
 
-The [CI workflow](../.github/workflows/validate.yml) defines Windows/Linux checks with Python 3.10 and 3.12. Its actual remote results are available under [GitHub Actions](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml); configuration alone is not a passing run.
+The [CI workflow](../.github/workflows/validate.yml) executed successfully on Windows and Linux with Python 3.10 and 3.12 for commit `a976ea0`: [all four jobs passed](https://github.com/bijit-ghosh/Agent-Skills/actions/runs/42814103410). Each job ran the repository validator and both test suites. This evidence covers that revision; consult [current workflow runs](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml) for subsequent changes.
 
 ## Not established by these checks
 
