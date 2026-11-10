@@ -46,3 +46,10 @@ The reference still has more platform adapters and a larger upstream skill count
 
 No paired model study establishes which collection performs better. A fair comparison would freeze representative tasks, run both collections plus a no-skill baseline with equal budgets and repeated trials, protect final cases, and report outcome quality, critical failures, total tokens, latency, and uncertainty. The existing 10 public assurance cases are a smoke test, not that comparison.
 
+
+## Portability refinement
+
+The reference's multi-host installation guidance informed a separate [agent integration guide](AGENT-INTEGRATION.md). This collection now documents native discovery paths for seven hosts using their official documentation, presents a host/model/tool boundary in the architecture, and uses an agent-neutral public description. Its existing destination-based installer supports these folder layouts without provider-specific code.
+
+This is documented portability, not seven completed client certifications. Upstream plugin commands and manifests were not copied. The benchmark's two provider adapters remain a separate, narrower implementation surface.
+

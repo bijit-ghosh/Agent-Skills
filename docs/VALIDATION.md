@@ -22,6 +22,6 @@ The [CI workflow](../.github/workflows/validate.yml) executed successfully on Wi
 - Behavioral effectiveness of all 15 skills in real coding-agent sessions.
 - A model comparison against the reference repository.
 - Token savings, production safety, or continuous recursive improvement.
-- Live provider API integration or compatibility with every agent client.
+- Live provider API integration or end-to-end compatibility with every agent client. The [integration guide](AGENT-INTEGRATION.md) records documentation-checked discovery paths separately from executed checks.
 
 The [16 lifecycle scenarios](../evals/README.md) are designed but unexecuted. Existing [provider preflight records](../benchmark/README.md) remain blocked with zero inference calls. A protected final evaluation and an authenticated live model run are separate work.

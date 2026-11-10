@@ -2,9 +2,9 @@
 
 The collection has **15 skills across the delivery lifecycle**. Routing selects the next useful decision; context keeps that decision grounded; the remaining skills define, build, check, assess, deliver, observe, and improve the software. Start at the stage your task needs, and stop when the authorized outcome is complete.
 
-A skill provides instructions to an agent. It does not become a service simply because it appears in a diagram. The same agent can apply several skills; separate agents are optional.
+The workflow is agent- and provider-agnostic. A compatible host loads the skill instructions, uses its configured model, and invokes the project's tools under existing permissions. The same agent can apply several skills; separate agents are optional. Skill portability does not imply identical behavior across hosts or models.
 
-[Catalog and installation](../README.md) · [Task examples](EXAMPLES.md) · [Evaluation coverage](../evals/README.md) · [Validation evidence](VALIDATION.md)
+[Catalog and installation](../README.md) · [Agent integration](AGENT-INTEGRATION.md) · [Task examples](EXAMPLES.md) · [Evaluation coverage](../evals/README.md) · [Validation evidence](VALIDATION.md)
 
 ## 1. Lifecycle architecture
 
@@ -79,21 +79,45 @@ All skill names below use the prefix `software-factory-`.
 
 Outcome validation happens both before release and after observation. Pre-release evidence can justify a release recommendation; it cannot establish a production outcome that has not yet been observed.
 
-## 2. What exists in this repository
+## 2. Host-independent execution architecture
+
+```mermaid
+flowchart TB
+    User["User outcome and authorized scope"] --> Discover
+    subgraph Host["Compatible coding-agent host"]
+        Discover["Discover selected SKILL.md metadata"] --> Load["Load workflow and relevant resources"]
+        Load --> Context["Assemble scoped task context"]
+        Context --> Model["Configured model or provider"]
+        Model --> Tools["Host tools and permission checks"]
+    end
+    Pack["Portable collection: 15 skills and local resources"] --> Discover
+    Tools --> Project["Project code, tests, browser, build and runtime"]
+    Project --> Evidence["Artifact-bound results and traces"]
+    Evidence --> Context
+    Evidence --> Assess["Verification, evals and outcome decision"]
+    Assess --> Result["Accepted artifact, held outcome or bounded next attempt"]
+    Display["Optional host-specific display metadata"] -.-> Discover
+```
+
+The host can be Cursor, GitHub Copilot, Gemini CLI, OpenCode, Kiro, Claude Code, Codex, or another compatible agent. It owns discovery, context, tool execution, and permission enforcement. The model supplies reasoning; the skills supply workflow guidance. The collection does not replace the host or grant capabilities it lacks.
+
+The [integration contract](AGENT-INTEGRATION.md#minimal-host-integration-contract) explains path resolution, optional metadata, permissions, and evidence recording. Native plugin commands, hooks, or shared-memory services from another repository are not implied by installing these folders.
+
+## 3. What exists in this repository
 
 | Layer | Included implementation | What the adopting project supplies |
 |---|---|---|
-| Skill discovery | [catalog.json](../catalog.json), 15 `SKILL.md` folders, Codex UI metadata | Agent/client discovery and model access |
+| Skill discovery | [catalog.json](../catalog.json), 15 `SKILL.md` folders, optional host display metadata | Agent/client discovery and model access |
 | Installation | [install.py](../scripts/install.py), explicit selection, overwrite refusal | Chosen destination and client configuration |
 | Repository quality | [validate.py](../scripts/validate.py), [utility tests](../tests/test_tools.py), [CI](../.github/workflows/validate.yml) | Project-specific source, integration tests, and build tooling |
-| Assurance smoke evaluation | [benchmark runner](../benchmark/run.py), 10 public decision cases | Provider credentials and authorized inference budget |
+| Assurance smoke evaluation | [benchmark runner](../benchmark/run.py), 10 public decision cases | Credentials for the runner's OpenAI/Anthropic adapters and authorized inference budget |
 | Lifecycle behavioral evaluation | [16 public scenarios](../evals/scenarios.json) | Controlled fixture projects, execution, trace grading, final cases |
 | Candidate screening | [offline promotion gate](../software-factory-improvement/scripts/promotion_gate.py) | Authentic measurements, statistical checks, protected policy and final evaluation |
 | Persistent improvement and operations | Workflow guidance in skills and this guide | Scheduler, durable controller, storage, permissions, telemetry, rollout and recovery |
 
 The benchmark covers the verification/evals/outcome-validation subset. Its `full` condition loads that subset, not the entire catalog. The lifecycle scenarios cover all 15 skills but are designed cases, not completed model trials.
 
-## 3. Context, authority, and evidence
+## 4. Context, authority, and evidence
 
 ```mermaid
 flowchart LR
@@ -130,7 +154,7 @@ Reuse a deterministic result only when all relevant inputs, checker versions, de
 
 These records are a recommended project contract, not a bundled storage API. The offline gate implements only the fields documented in its [promotion contract](../software-factory-improvement/references/promotion-contract.md).
 
-## 4. Evaluation-driven hill climbing
+## 5. Evaluation-driven hill climbing
 
 The improvement skill coordinates a bounded experiment on a prompt, skill, retrieval policy, or workflow. Specification and outcome-validation keep the target stable; context and performance identify avoidable work; implementation creates a candidate; verification and evals test it.
 
@@ -163,7 +187,7 @@ Stop when the target is reached, a declared budget is exhausted, or progress sta
 
 This is recursive **workflow** improvement: accepted changes can improve later attempts. It does not retrain model weights or guarantee continuous progress. Continuous operation requires a separately configured and authorized runner.
 
-## 5. Delivery, operations, and outcome closure
+## 6. Delivery, operations, and outcome closure
 
 ```mermaid
 flowchart TD
@@ -199,7 +223,7 @@ For ongoing operation, the project controller needs event deduplication, leases 
 | Budget exhaustion or stalled progress | Stop; retain incumbent and report unmet target |
 | Protected evaluation leakage | Record contamination and obtain fresh final evidence |
 
-## 6. Worked example: refund processing
+## 7. Worked example: refund processing
 
 **Outcome:** an authorized refund creates exactly one durable payment effect, remains within its approved amount, and becomes reconcilable after a timeout. The payment system and approval record are authoritative.
 
@@ -216,7 +240,7 @@ The acceptance record links R1/R2 to the patch, test cases, tool traces, and pay
 
 The detailed assurance records remain available as task-specific resources: [verification record](../software-factory-verification/references/verification-record.md), [eval design](../software-factory-evals/references/eval-design.md), and [outcome record](../software-factory-outcome-validation/references/outcome-record.md).
 
-## 7. Apply only the path the task needs
+## 8. Apply only the path the task needs
 
 - **Small bug:** implementation → review or relevant regression check.
 - **New feature:** specification → planning → implementation/interfaces → relevant checks → outcome decision.
@@ -226,3 +250,5 @@ The detailed assurance records remain available as task-specific resources: [ver
 - **Context or token optimization:** context/performance → improvement → evals → outcome-validation.
 
 Use the [copyable examples](EXAMPLES.md) to start a task. Keep [contribution checks](../CONTRIBUTING.md) and the [validation record](VALIDATION.md) separate from claims about real-world model behavior.
+
+

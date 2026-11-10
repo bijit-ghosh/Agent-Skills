@@ -25,3 +25,7 @@ Keep public smoke cases separate from protected evaluation data. Do not add a li
 When capabilities change, update the catalog, README skill table and lifecycle diagram, architecture responsibilities, task examples, and evaluation coverage together. Keep skill-local references standalone. Update repository About metadata if the public purpose or scope changes.
 
 Describe implemented utilities separately from project-supplied infrastructure. Preserve historical benchmark scope and run identity; do not relabel old results as coverage for newly added skills. Link a completed CI run when making a dated validation claim.
+
+
+Keep workflow instructions host-neutral. Put discovery paths and client-specific invocation in the integration guide, cite official documentation, and label documented compatibility separately from an executed host/model test. Keep optional display metadata out of the portable workflow contract.
+

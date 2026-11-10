@@ -1,6 +1,6 @@
 # Practical examples for all 15 skills
 
-Use the full `software-factory-<name>` when referring to a skill in your agent. The examples are task requests, not reports of completed work. Provide the relevant repository or evidence and an explicit outcome; invoke only the skills the task needs.
+Use the full `software-factory-<name>` when referring to a skill in any compatible agent. Invocation syntax belongs to the host: use its skill selector, command, or an explicit request to read the installed skill. See [agent integration](AGENT-INTEGRATION.md); no example requires a particular provider. The examples are task requests, not reports of completed work. Provide the relevant repository or evidence and an explicit outcome; invoke only the skills the task needs.
 
 | Skill | Example request | Expected output |
 |---|---|---|
@@ -39,3 +39,4 @@ Use context to identify irrelevant or stale material and performance to define a
 Provide artifact revision, contract/requirement IDs, relevant error or trace, environment, existing checks, and budget where applicable. Do not paste credentials or unrelated private data. If a required input is missing, the agent should state the gap rather than fabricate a result.
 
 The [lifecycle scenarios](../evals/README.md) describe behavior to evaluate. The [architecture guide](ARCHITECTURE.md) defines handoffs and implementation boundaries.
+

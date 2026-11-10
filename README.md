@@ -1,6 +1,6 @@
 # Agent Skills for Software Factories
 
-[![Validation](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml/badge.svg)](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml) · [MIT licensed](LICENSE) · **15 focused skills** · **Claude + Codex**
+[![Validation](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml/badge.svg)](https://github.com/bijit-ghosh/Agent-Skills/actions/workflows/validate.yml) · [MIT licensed](LICENSE) · **15 focused skills** · **Agent-agnostic workflows**
 
 **Created and maintained by Bijit Ghosh.** Build software factories around explicit behavior, traceable evidence, and measurable outcomes. These 15 skills connect specification, implementation, review, security, performance, evaluation, delivery, operations, and bounded improvement.
 
@@ -8,7 +8,7 @@ The goal is practical: define the behavior you need, build a bounded change, col
 
 The assurance foundation comes from my article, [Formally Verified, Still Unsafe: Specification Gaps and Residual Risk in Agentic Software](https://medium.com/@bijit211987/formally-verified-still-unsafe-specification-gaps-and-residual-risk-in-agentic-software-998c436ccf6a).
 
-[Skill catalog](#choose-a-skill) · [Install](#installation) · [Architecture](#how-it-works) · [Improvement loop](#evaluation-driven-improvement) · [Validation](#what-is-tested) · [Ownership](docs/PROVENANCE.md)
+[Skill catalog](#choose-a-skill) · [Install](#installation) · [Agent integration](docs/AGENT-INTEGRATION.md) · [Architecture](#how-it-works) · [Improvement loop](#evaluation-driven-improvement) · [Validation](#what-is-tested) · [Ownership](docs/PROVENANCE.md)
 
 ## What you get
 
@@ -18,7 +18,7 @@ The assurance foundation comes from my article, [Formally Verified, Still Unsafe
 - A [public smoke benchmark](benchmark/README.md), [16 lifecycle review scenarios](evals/README.md), utility tests, and a Windows/Linux CI workflow.
 - A detailed [architecture and assurance guide](docs/ARCHITECTURE.md) covering evidence flow, trust boundaries, recovery, and durable state.
 
-These are portable skill folders for compatible agents, including Claude Code and Codex. They do not require a specific model provider. They are not a background service, a production policy engine, or a formal verification tool; the agent uses the adopting project's tools and permissions.
+These are portable skill folders for compatible AI coding agents. Use them with Cursor, GitHub Copilot, Gemini CLI, OpenCode, Kiro, Claude Code, Codex, or another host that supports the format. The workflow is independent of the model provider; see [documented integration paths and validation limits](docs/AGENT-INTEGRATION.md). They are not a background service, a production policy engine, or a formal verification tool; the agent uses the adopting project's tools and permissions.
 
 ## Choose a skill
 
@@ -46,7 +46,7 @@ Each folder uses the full name `software-factory-<name>`. Skills are independent
 
 ## Installation
 
-Clone this repository and inspect the skills you want. The local installer uses Python 3.10+ and no third-party packages:
+Use the same skill folders across compatible hosts. Clone the repository, choose your host's destination, and install only the capabilities you need. The local installer requires Python 3.10+ and no third-party packages.
 
 ```bash
 git clone https://github.com/bijit-ghosh/Agent-Skills.git
@@ -54,31 +54,25 @@ cd Agent-Skills
 python scripts/validate.py
 ```
 
-### Claude Code
-
-Install a small delivery starter set into your personal skill directory:
+For example, install a starter set into Cursor's personal skill directory:
 
 ```bash
-python scripts/install.py --dest ~/.claude/skills software-factory-routing software-factory-specification software-factory-planning software-factory-implementation software-factory-review
+python scripts/install.py --dest ~/.cursor/skills software-factory-routing software-factory-specification software-factory-planning software-factory-implementation software-factory-review
 ```
 
-Then invoke a skill with, for example, `/software-factory-routing`. For project-only use, set `--dest` to the target project's `.claude/skills` directory. See [Claude Code's official skill documentation](https://code.claude.com/docs/en/skills).
+Change `--dest` for your host:
 
-### Codex
+| Host | Example personal destination |
+|---|---|
+| Cursor | `~/.cursor/skills` |
+| GitHub Copilot | `~/.copilot/skills` |
+| Gemini CLI | `~/.gemini/skills` |
+| OpenCode | `~/.config/opencode/skills` |
+| Kiro | `~/.kiro/skills` |
+| Claude Code | `~/.claude/skills` |
+| Codex | `~/.agents/skills` |
 
-Use the built-in skill installer when available:
-
-```text
-$skill-installer install https://github.com/bijit-ghosh/Agent-Skills/tree/main/software-factory-routing
-```
-
-Or use this repository's installer with the documented personal skill directory:
-
-```bash
-python scripts/install.py --dest ~/.agents/skills software-factory-routing software-factory-specification software-factory-planning software-factory-implementation software-factory-review
-```
-
-For project scope, use the target project's `.agents/skills` directory. Invoke the installed skill by name or select it in your client. Older installations may use a configured skill directory; choose the directory your client discovers. See [OpenAI's official skill documentation](https://learn.chatgpt.com/docs/build-skills).
+See the [integration guide](docs/AGENT-INTEGRATION.md) for project paths, official sources, Windows examples, optional Codex skill-installer usage, and manual use in other agents. The paths are documentation-checked; end-to-end testing in every listed host has not been performed. Installation does not grant tool permissions or configure model access.
 
 ### Choose an installation set
 
@@ -102,7 +96,7 @@ To update a skill, compare the new folder with your installed copy and preserve 
 
 ## How it works
 
-The software factory has five stages, supported throughout by routing and context. Each stage produces evidence that the next can inspect. Enter at the stage the task needs; a small fix does not require a full lifecycle run.
+A compatible agent host loads the skills and uses the project's tools. The model provider is interchangeable, subject to evaluation. The software factory has five stages, supported throughout by routing and context. Each stage produces evidence that the next can inspect. Enter at the stage the task needs; a small fix does not require a full lifecycle run.
 
 ```mermaid
 flowchart TB
