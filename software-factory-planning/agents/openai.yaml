@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Planning"
+  short_description: "Plan reversible increments and evidence gates"

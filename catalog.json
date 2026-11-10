@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "owner": "bijit-ghosh",
+  "skills": [
+    {
+      "name": "software-factory-routing",
+      "path": "software-factory-routing",
+      "description": "Route a multi-stage software-factory task to the smallest useful set of skills; use when work spans discovery, implementation, assurance, or release."
+    },
+    {
+      "name": "software-factory-specification",
+      "path": "software-factory-specification",
+      "description": "Turn ambiguous software-factory requests into observable behavior contracts and acceptance cases before consequential implementation."
+    },
+    {
+      "name": "software-factory-planning",
+      "path": "software-factory-planning",
+      "description": "Plan coupled software changes with dependency order, reversible increments, evidence gates, and architecture decisions."
+    },
+    {
+      "name": "software-factory-implementation",
+      "path": "software-factory-implementation",
+      "description": "Implement a bounded software change or diagnose a reproducible failure using focused tests, causal experiments, and small reversible edits."
+    },
+    {
+      "name": "software-factory-context",
+      "path": "software-factory-context",
+      "description": "Reduce stale or excessive agent context while preserving the behavior contract, evidence identity, unresolved risks, and authorized scope."
+    },
+    {
+      "name": "software-factory-review",
+      "path": "software-factory-review",
+      "description": "Review a software change for actionable correctness, maintainability, and regression risks; simplify only when behavior preservation is demonstrable."
+    },
+    {
+      "name": "software-factory-interfaces",
+      "path": "software-factory-interfaces",
+      "description": "Design or validate API and user-interface boundaries, including compatibility, accessibility, browser behavior, and failure states."
+    },
+    {
+      "name": "software-factory-security",
+      "path": "software-factory-security",
+      "description": "Assess and remediate concrete software-factory trust-boundary risks such as authorization bypass, injection, secret exposure, and dependency compromise."
+    },
+    {
+      "name": "software-factory-performance",
+      "path": "software-factory-performance",
+      "description": "Diagnose and improve measured latency, throughput, memory, or token efficiency while preserving correctness and workload comparability."
+    },
+    {
+      "name": "software-factory-delivery",
+      "path": "software-factory-delivery",
+      "description": "Prepare and execute authorized software releases, CI changes, or migrations with artifact identity, compatibility checks, and recovery evidence."
+    },
+    {
+      "name": "software-factory-operations",
+      "path": "software-factory-operations",
+      "description": "Investigate runtime incidents and improve observability around software-factory outcomes, retries, reconciliation, and recovery."
+    },
+    {
+      "name": "software-factory-improvement",
+      "path": "software-factory-improvement",
+      "description": "Run bounded evaluation-driven hill climbing on prompts, skills, retrieval, or workflow configuration while preserving fixed acceptance gates and protected final evaluations."
+    },
+    {
+      "name": "software-factory-verification",
+      "path": "software-factory-verification",
+      "description": "Define behavior contracts and verify critical software-factory or agentic workflows against safety, liveness, authorization, and concurrency properties. Use for assurance design, specification-gap analysis, or verification impact analysis; not routine feature implementation."
+    },
+    {
+      "name": "software-factory-evals",
+      "path": "software-factory-evals",
+      "description": "Design, execute, and analyze evaluations of coding agents and stateful agent workflows in a software factory. Use for behavioral regression suites, fault scenarios, grader design, and candidate comparisons; not generic unit-test authoring or model-provider selection."
+    },
+    {
+      "name": "software-factory-outcome-validation",
+      "path": "software-factory-outcome-validation",
+      "description": "Validate whether a software-factory change achieved the intended business outcome and whether release or production evidence supports acceptance. Use for acceptance reviews, residual-risk decisions, runtime-control validation, and post-release outcome checks; not merely checking that tests passed."
+    }
+  ]
+}
+

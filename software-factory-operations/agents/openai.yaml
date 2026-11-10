@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Operations"
+  short_description: "Reconcile runtime effects and verify recovery"

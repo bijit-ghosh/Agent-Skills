@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Interfaces"
+  short_description: "Validate API contracts and user-visible behavior"

@@ -26,7 +26,7 @@ Each model receives the same case facts, check catalog, action definitions, and 
 The conditions are:
 
 1. **Baseline:** common task instructions and case facts only.
-2. **Full:** baseline plus all three skills and their Markdown references.
+2. **Full:** baseline plus the three original assurance skills and their Markdown references. This condition does not include the 12 lifecycle skills added later.
 3. **Selective:** baseline plus one relevant skill and its references, chosen by a fixed per-case mapping.
 
 Selective routing is curated in advance, not learned by the model. Any measured benefit includes that routing advantage; this is not an evaluation of automatic skill selection. The full condition deliberately includes more context and is a context strategy comparison, not necessarily the most efficient real-world client configuration.
@@ -80,3 +80,4 @@ Report all conditions even if the skills add tokens or reduce performance. Do no
 - [Claude Messages API](https://platform.claude.com/docs/en/api/messages).
 
 Documentation establishes model identifiers and interface guidance; it does not establish that this account can access either model.
+

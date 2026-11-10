@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Delivery"
+  short_description: "Release tested artifacts with a recovery path"

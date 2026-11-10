@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Improvement"
+  short_description: "Evaluate bounded workflow improvements before promotion"

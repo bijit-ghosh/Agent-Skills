@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Implementation"
+  short_description: "Implement bounded changes with causal debugging"

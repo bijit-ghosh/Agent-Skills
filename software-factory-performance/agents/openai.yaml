@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Performance"
+  short_description: "Measure speed and token gains without quality loss"

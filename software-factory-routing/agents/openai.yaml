@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Routing"
+  short_description: "Select the smallest useful software-factory workflow"

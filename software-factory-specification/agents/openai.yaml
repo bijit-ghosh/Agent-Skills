@@ -1,0 +1,3 @@
+interface:
+  display_name: "Software Factory Specification"
+  short_description: "Define observable behavior and acceptance contracts"
