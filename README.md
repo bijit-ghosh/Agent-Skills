@@ -6,6 +6,8 @@
 
 The goal is practical: define the behavior you need, build a bounded change, collect evidence, and accept it only when the result meets the original target. A passing test or a higher evaluation score does not establish that the business outcome is correct.
 
+![Diagram of the 15 software factory skills, from specification and implementation through verification, delivery, operations, and improvement.](docs/software-factory-15-skills.png)
+
 The assurance foundation comes from my article, [Formally Verified, Still Unsafe: Specification Gaps and Residual Risk in Agentic Software](https://medium.com/@bijit211987/formally-verified-still-unsafe-specification-gaps-and-residual-risk-in-agentic-software-998c436ccf6a).
 
 [Skill catalog](#choose-a-skill) · [Install](#installation) · [Agent integration](docs/AGENT-INTEGRATION.md) · [Architecture](#how-it-works) · [Improvement loop](#evaluation-driven-improvement) · [Validation](#what-is-tested) · [Ownership](docs/PROVENANCE.md)
@@ -242,4 +244,5 @@ The benchmark's `full` condition means the **verification, evals, and outcome-va
 This is Bijit Ghosh's independently maintained project, distributed under the [MIT license](LICENSE). 
 
 Read the [ownership and provenance statement](docs/PROVENANCE.md), [reference review and scope mapping](docs/REFERENCE-REVIEW.md), and [contribution guide](CONTRIBUTING.md). The review identifies concrete improvements and remaining gaps; it does not claim unmeasured superiority.
+
 
