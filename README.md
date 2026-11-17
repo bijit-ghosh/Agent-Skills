@@ -8,6 +8,8 @@ The goal is practical: define the behavior you need, build a bounded change, col
 
 ![Diagram of the 15 software factory skills, from specification and implementation through verification, delivery, operations, and improvement.](docs/software-factory-15-skills.png)
 
+[Watch the 15-second animated diagram](docs/software-factory-15-skills.mp4). It traces the skills from specification and implementation through evidence checks, delivery, operations, and improvement.
+
 The assurance foundation comes from my article, [Formally Verified, Still Unsafe: Specification Gaps and Residual Risk in Agentic Software](https://medium.com/@bijit211987/formally-verified-still-unsafe-specification-gaps-and-residual-risk-in-agentic-software-998c436ccf6a).
 
 [Skill catalog](#choose-a-skill) · [Install](#installation) · [Agent integration](docs/AGENT-INTEGRATION.md) · [Architecture](#how-it-works) · [Improvement loop](#evaluation-driven-improvement) · [Validation](#what-is-tested) · [Ownership](docs/PROVENANCE.md)
@@ -244,5 +246,6 @@ The benchmark's `full` condition means the **verification, evals, and outcome-va
 This is Bijit Ghosh's independently maintained project, distributed under the [MIT license](LICENSE). 
 
 Read the [ownership and provenance statement](docs/PROVENANCE.md), [reference review and scope mapping](docs/REFERENCE-REVIEW.md), and [contribution guide](CONTRIBUTING.md). The review identifies concrete improvements and remaining gaps; it does not claim unmeasured superiority.
+
 
 
