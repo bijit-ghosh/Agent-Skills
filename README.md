@@ -239,7 +239,7 @@ The benchmark's `full` condition means the **verification, evals, and outcome-va
 
 ## Ownership, reference, and contributions
 
-This is Bijit Ghosh's independently maintained project, distributed under the [MIT license](LICENSE). [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills) informed a reference review of lifecycle coverage and packaging. The new instructions and tooling were written for this project; no upstream skill files were vendored.
+This is Bijit Ghosh's independently maintained project, distributed under the [MIT license](LICENSE). 
 
 Read the [ownership and provenance statement](docs/PROVENANCE.md), [reference review and scope mapping](docs/REFERENCE-REVIEW.md), and [contribution guide](CONTRIBUTING.md). The review identifies concrete improvements and remaining gaps; it does not claim unmeasured superiority.
 
