@@ -1,0 +1,12 @@
+
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "software-factory",
+  "version": "1.0.0",
+  "description": "15 reusable AI software factory skills covering specification, implementation, verification, evaluation, security, delivery, operations, and continuous improvement.",
+  "author": {
+    "name": "Bijit Ghosh"
+  },
+  "repository": "https://github.com/bijit-ghosh/Agent-Skills",
+  "license": "MIT"
+}
